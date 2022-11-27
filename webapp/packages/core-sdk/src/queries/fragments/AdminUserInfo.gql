@@ -1,0 +1,12 @@
+fragment AdminUserInfo on AdminUserInfo {
+  userId
+  grantedTeams
+  linkedAuthProviders
+  metaParameters @include(if: $includeMetaParameters)
+  
+  origins {
+    ...ObjectOriginInfo
+  }
+  enabled
+  authRole
+}

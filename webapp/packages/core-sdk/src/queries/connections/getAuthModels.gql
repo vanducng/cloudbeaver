@@ -1,0 +1,22 @@
+query getAuthModels {
+  models: authModels {
+    id
+    displayName
+    description
+    icon
+    requiresLocalConfiguration
+    requiredAuth
+    properties {
+      id
+      displayName
+      description
+      category
+      dataType
+      validValues
+      defaultValue
+      length
+      features
+      order
+    }
+  }
+}

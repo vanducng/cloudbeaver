@@ -1,0 +1,64 @@
+fragment DatabaseConnection on ConnectionInfo {
+  id
+  projectId
+  name
+  description
+  driverId
+
+  template
+  connected
+  readOnly
+  
+  saveCredentials
+  credentialsSaved @include(if: $includeCredentialsSaved)
+  sharedCredentials
+
+  folder
+  nodePath
+
+  configurationType @include(if: $customIncludeOptions)
+  useUrl @include(if: $customIncludeOptions)
+  host @include(if: $customIncludeOptions)
+  port @include(if: $customIncludeOptions)
+  serverName @include(if: $customIncludeOptions)
+  databaseName @include(if: $customIncludeOptions)
+  url @include(if: $customIncludeOptions)
+
+  properties @include(if: $includeProperties)
+  providerProperties @include(if: $includeProviderProperties)
+
+  requiredAuth
+
+  features
+  supportedDataFormats
+
+  origin @include(if: $includeOrigin) {
+    ...ObjectOriginInfo
+  }
+
+  authNeeded @include(if: $includeAuthNeeded)
+  authModel
+
+  authProperties @include(if: $includeAuthProperties) {
+    ...UserConnectionAuthProperties
+  }
+
+  networkHandlersConfig @include(if: $includeNetworkHandlersConfig) {
+    id
+    enabled
+    authType
+    userName
+    password
+    key
+    savePassword
+    properties
+  }
+
+  navigatorSettings {
+    ...AllNavigatorSettings
+  }
+
+  canViewSettings
+  canEdit
+  canDelete
+}

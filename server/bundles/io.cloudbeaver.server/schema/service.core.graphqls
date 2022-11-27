@@ -1,0 +1,588 @@
+
+####################################################
+# General stuff
+####################################################
+
+# Property
+
+type ObjectPropertyInfo {
+    # ID
+    id: String
+    # Human readable name
+    displayName: String
+    # Property description
+    description: String
+    # Property category (may be used if object has a lot of properties)
+    category: String
+    # Property data type (int, String, etc)
+    dataType: String
+
+    # Property value. Note: for some properties value reading may take a lot of time (e.g. RowCount for tables)
+    value: Object
+
+    # List of values this property can take. Makes sense only for enumerable properties
+    validValues: [ Object ]
+    # Default property value
+    defaultValue: Object
+
+    # Property value length
+    length: ObjectPropertyLength!
+
+    # Supported features (system, hidden, inherited, foreign, expensive, etc)
+    features: [ String! ]!
+    # Order position
+    order: Int!
+}
+
+enum ObjectPropertyLength {
+    # 1 character
+    TINY,
+    # 20 characters
+    SHORT,
+    # <= 64 characters
+    MEDIUM,
+    # Full line length. The default
+    LONG,
+    # Multi-line long text
+    MULTILINE
+}
+
+# Async types
+
+type AsyncTaskInfo {
+    id: String!
+    name: String
+    running: Boolean!
+
+    status: String
+    error: ServerError
+
+    result: SQLExecuteInfo @deprecated # Deprecated. Use asyncSqlExecuteResults instead
+    # Task result.
+    # Can be some kind of identifier to obtain real result using another API function
+    taskResult: Object
+}
+
+# Various server errors descriptor
+
+type ServerError {
+    message: String
+    errorCode: String
+    errorType: String
+    stackTrace: String
+    causedBy: ServerError
+}
+
+type ServerMessage {
+    time: String
+    message: String
+}
+
+# Languages supported by server
+
+type ServerLanguage {
+    isoCode: String!
+    displayName: String
+    nativeName: String
+}
+
+type WebServiceConfig {
+    id: String!
+    name: String!
+    description: String!
+    bundleVersion: String!
+}
+
+type ProductInfo {
+    id: ID!
+    version: String!
+    name: String!
+    description: String
+    buildTime: String!
+    releaseTime: String!
+    licenseInfo: String
+
+    latestVersionInfo: String
+}
+
+type ServerConfig {
+    name: String!
+    version: String!
+    workspaceId: ID!
+
+    serverURL: String!
+    rootURI: String!
+    hostName: String!
+
+    anonymousAccessEnabled: Boolean!
+    supportsCustomConnections: Boolean!
+    supportsConnectionBrowser: Boolean!
+    supportsWorkspaces: Boolean!
+    resourceManagerEnabled: Boolean!
+
+    publicCredentialsSaveEnabled: Boolean!
+    adminCredentialsSaveEnabled: Boolean!
+
+    licenseRequired: Boolean!
+    licenseValid: Boolean!
+
+    sessionExpireTime: Int!
+    localHostAddress: String
+
+    configurationMode: Boolean!
+    developmentMode: Boolean!
+    redirectOnFederatedAuth: Boolean!
+    distributed: Boolean!
+
+    enabledFeatures: [ID!]!
+    enabledAuthProviders: [ID!]!
+    supportedLanguages: [ ServerLanguage! ]!
+    services: [ WebServiceConfig ]
+    productConfiguration: Object!
+    productInfo: ProductInfo!
+    defaultNavigatorSettings: NavigatorSettings!
+    disabledDrivers: [ID!]!
+    resourceQuotas: Object!
+}
+
+type SessionInfo {
+    createTime: String!
+    lastAccessTime: String!
+    locale: String!
+
+    cacheExpired: Boolean!
+
+    serverMessages: [ ServerMessage ]
+    connections: [ ConnectionInfo! ]!
+    actionParameters: Object
+
+    valid: Boolean!
+    remainingTime: Int!
+}
+
+####################################################
+# Drivers and connections
+####################################################
+
+type DatabaseAuthModel {
+    id: ID!
+    displayName: String!
+    description: String
+    icon: String
+    # checks if the auth model needs a configuration on a local file system
+    requiresLocalConfiguration: Boolean
+    requiredAuth: String
+
+    properties: [ObjectPropertyInfo!]!
+}
+
+type DriverInfo {
+    id: ID!
+    name: String
+    description: String
+    icon: String
+    iconBig: String
+
+    # Driver provider ID
+    providerId: ID
+    # Driver Java class name
+    driverClassName: String
+    defaultHost: String
+    defaultPort: String
+    defaultDatabase: String
+    defaultServer: String
+    defaultUser: String
+    sampleURL: String
+    driverInfoURL: String
+    driverPropertiesURL: String
+    embedded: Boolean
+    enabled: Boolean!
+    requiresServerName: Boolean
+    requiresDatabaseName: Boolean
+
+    licenseRequired: Boolean
+    license: String
+    custom: Boolean
+    # Driver score for ordering, biggest first
+    promotedScore: Int
+
+    # Never used?
+    #connectionProperties: Object
+    #defaultConnectionProperties: Object
+
+    # Driver properties.
+    # Note: it is expensive property and it may produce database server roundtrips.
+    # Call it only when you really need it.
+    # These properties are for advanced users in usually shouldn't be specified for new connections.
+    driverProperties: [ObjectPropertyInfo!]!
+    # Driver parameters (map name->value)
+    driverParameters: Object!
+
+    # Additional driver provider properties
+    # These properties can be configured by user on main connection page
+    # to provide important connection settings
+    providerProperties: [ObjectPropertyInfo!]!
+
+    # False for drivers which do not support authentication
+    anonymousAccess: Boolean
+
+    defaultAuthModel: ID!
+    applicableAuthModels: [ID!]!
+
+    applicableNetworkHandlers: [ID]!
+
+    configurationTypes: [DriverConfigurationType]!
+}
+
+enum ResultDataFormat {
+    resultset,
+    document,
+    graph,
+    timeseries
+}
+
+enum DriverConfigurationType {
+    MANUAL,
+    URL
+}
+
+## Network handler config
+
+enum NetworkHandlerType {
+    TUNNEL,
+    PROXY,
+    CONFIG
+}
+
+enum NetworkHandlerAuthType {
+    PASSWORD,
+    PUBLIC_KEY,
+    AGENT
+}
+
+type NetworkHandlerDescriptor {
+    id: ID!
+    codeName: String!
+    label: String!
+    description: String
+    secured: Boolean!
+    type: NetworkHandlerType
+    properties: [ObjectPropertyInfo!]!
+}
+
+type NetworkHandlerConfig {
+    id: ID!
+    enabled: Boolean!
+    authType: NetworkHandlerAuthType!
+    userName: String
+    password: String
+    key: String
+    savePassword: Boolean!
+    properties: Object!
+}
+
+# Connection instance
+type ConnectionInfo {
+    id: ID!
+    driverId: ID!
+
+    name: String!
+    description: String
+
+    host: String
+    port: String
+    serverName: String
+    databaseName: String
+    url: String
+
+    properties: Object
+
+    template: Boolean!
+    connected: Boolean!
+    provided: Boolean!
+    readOnly: Boolean!
+    # Forces connection URL use, host/port/database parameters will be ignored
+    useUrl: Boolean!
+
+    # Forces credentials save. This flag doesn't work in shared projects.
+    saveCredentials: Boolean!
+    # Shared credentials - the same for all users, stored in secure storage.
+    sharedCredentials: Boolean!
+    # Determines that credentials were saved for current user.
+    # This field read is slow, it should be read only when it really needed
+    credentialsSaved: Boolean!
+    # Determines that additional credentials are needed to connect
+    # This field read is slow, it should be read only when it really needed
+    authNeeded: Boolean!
+
+    folder: ID
+    nodePath: String
+
+    connectTime: String
+    connectionError: ServerError
+    serverVersion: String
+    clientVersion: String
+
+    origin: ObjectOrigin!
+
+    authModel: ID
+    authProperties: [ObjectPropertyInfo!]!
+
+    providerProperties: Object!
+    networkHandlersConfig: [NetworkHandlerConfig!]!
+
+    # Supported features (provided etc)
+    features: [ String! ]!
+    navigatorSettings: NavigatorSettings!
+    supportedDataFormats: [ ResultDataFormat! ]!
+    configurationType: DriverConfigurationType
+
+    #Access properties
+    canViewSettings: Boolean!
+    canEdit: Boolean!
+    canDelete: Boolean!
+
+    projectId: ID!
+    requiredAuth: String
+}
+
+type ConnectionFolderInfo {
+    id: ID!
+    projectId: ID!
+    description: String
+}
+
+type NetworkEndpointInfo {
+    message: String
+    clientVersion: String
+    serverVersion: String
+}
+
+type ObjectOrigin {
+    type: ID!
+    subType: ID
+    displayName: String!
+    icon: String
+    configuration: Object
+    details: [ObjectPropertyInfo!]
+}
+
+type NavigatorSettings {
+    showSystemObjects: Boolean!
+    showUtilityObjects: Boolean!
+    showOnlyEntities: Boolean!
+    mergeEntities: Boolean!
+    hideFolders: Boolean!
+    hideSchemas: Boolean!
+    hideVirtualModel: Boolean!
+}
+
+type ProjectInfo {
+    id: String!
+    global: Boolean!
+    shared: Boolean!
+    name: String!
+    description: String
+    canEditDataSources: Boolean!
+    canViewDataSources: Boolean!
+    canEditResources: Boolean!
+    canViewResources: Boolean!
+}
+
+type LogEntry {
+    time: DateTime
+    type: String!
+    message: String
+    stackTrace: String
+}
+
+enum CBEventType {
+    cb_config_changed,
+    cb_datasource_updated,
+    cb_rm_resource_updated
+}
+
+type CBEvent {
+    eventType: CBEventType!
+    eventData: Object!
+}
+
+####################################################
+# Input types
+####################################################
+
+input NavigatorSettingsInput {
+    showSystemObjects: Boolean!
+    showUtilityObjects: Boolean!
+    showOnlyEntities: Boolean!
+    mergeEntities: Boolean!
+    hideFolders: Boolean!
+    hideSchemas: Boolean!
+    hideVirtualModel: Boolean!
+}
+
+input NetworkHandlerConfigInput {
+    id: ID!
+    enabled: Boolean
+    authType: NetworkHandlerAuthType
+    userName: String
+    password: String
+    key: String
+    savePassword: Boolean
+    properties: Object
+}
+
+# Configuration of particular connection. Used for new connection create. Includes auth info
+input ConnectionConfig {
+    # used only for testing created connection
+    connectionId: String
+    name: String
+    description: String
+
+    # ID of template connection
+    templateId: ID
+    # ID of database driver
+    driverId: ID
+
+    # Custom connection parameters (all optional)
+
+    host: String
+    port: String
+    serverName: String
+    databaseName: String
+    # Connection url jdbc:{driver}://{host}[:{port}]/[{database}]
+    url: String
+    # Properties
+    properties: Object
+
+    # Template connection
+    template: Boolean
+    # Read-onyl connection
+    readOnly: Boolean
+
+    # User credentials
+
+    saveCredentials: Boolean
+    sharedCredentials: Boolean
+    authModelId: ID
+    credentials: Object
+
+    # Map of provider properties (name/value)
+
+    providerProperties: Object
+
+    # Network handlers. Map of id->property map (name/value).
+
+    networkHandlersConfig: [NetworkHandlerConfigInput!]
+
+    #### deprecated fields
+
+    # ID of predefined datasource
+    dataSourceId: ID #@deprecated
+
+    # Direct user credentials
+    userName: String #@deprecated
+    userPassword: String #@deprecated
+
+    # Folder
+    folder: ID
+
+    # Configuration type
+    configurationType: DriverConfigurationType
+}
+
+####################################################
+# Main API
+####################################################
+
+extend type Query {
+    # Returns server config
+    serverConfig: ServerConfig!
+
+    # Returns session state ( initialize if not )
+    sessionState: SessionInfo!
+
+    # Session permissions
+    sessionPermissions: [ID]!
+
+    # Get driver info
+    driverList( id: ID ): [ DriverInfo! ]!
+    authModels: [DatabaseAuthModel!]!
+    networkHandlers: [NetworkHandlerDescriptor!]!
+
+    # List of user connections.
+    userConnections( projectId: ID, id: ID ): [ ConnectionInfo! ]!
+    # List of template connections.
+    templateConnections( projectId: ID ): [ ConnectionInfo! ]!
+
+    # List of connection folders
+    connectionFolders( projectId: ID, path: ID ): [ ConnectionFolderInfo! ]!
+
+    # Return connection info
+    connectionInfo( projectId: ID, id: ID! ): ConnectionInfo!
+
+    # Return list of accessible user projects
+    listProjects: [ ProjectInfo! ]!
+
+    readSessionLog(maxEntries: Int, clearEntries: Boolean): [ LogEntry! ]!
+
+    readSessionEvents(maxEntries: Int!): [ CBEvent! ]!
+}
+
+extend type Mutation {
+    # Initialize session
+    openSession(defaultLocale: String): SessionInfo!
+
+    # Destroy session
+    closeSession: Boolean
+
+    # Refreshes session on server and returns its state
+    touchSession: Boolean
+
+    # Refresh session connection list
+    refreshSessionConnections: Boolean
+
+    # Refreshes session on server and returns its state
+    changeSessionLanguage(locale: String): Boolean
+
+    # Create new custom connection. Custom connections exist only within the current session.
+    createConnection( config: ConnectionConfig!, projectId: ID ): ConnectionInfo!
+
+    updateConnection( config: ConnectionConfig!, projectId: ID ): ConnectionInfo!
+
+    deleteConnection( id: ID!, projectId: ID ): Boolean!
+
+    createConnectionFromTemplate( templateId: ID!, projectId: ID!, connectionName: String ): ConnectionInfo!
+
+    # Create new folder
+    createConnectionFolder(parentFolderPath: ID, folderName: String!, projectId: ID ): ConnectionFolderInfo!
+
+    deleteConnectionFolder( folderPath: ID!, projectId: ID ): Boolean!
+
+    # Copies connection configuration from node
+    copyConnectionFromNode( nodePath: String!, config: ConnectionConfig, projectId: ID ): ConnectionInfo!
+
+    # Test connection configuration. Returns remote server version
+    testConnection( config: ConnectionConfig!, projectId: ID ): ConnectionInfo!
+
+    # Test connection configuration. Returns remote server version
+    testNetworkHandler( config: NetworkHandlerConfigInput! ): NetworkEndpointInfo!
+
+    # Initiate existing connection
+    initConnection( id: ID!, projectId: ID, credentials: Object, networkCredentials: [NetworkHandlerConfigInput!],
+        saveCredentials:Boolean, sharedCredentials: Boolean ): ConnectionInfo!
+
+    # Disconnect from database
+    closeConnection( id: ID!, projectId: ID ): ConnectionInfo!
+
+    # Changes navigator settings for connection
+    setConnectionNavigatorSettings( id: ID!, projectId: ID, settings: NavigatorSettingsInput!): ConnectionInfo!
+
+    #### Generic async functions
+
+    asyncTaskCancel(id: String!): Boolean
+
+    asyncTaskInfo(id: String!, removeOnFinish: Boolean!): AsyncTaskInfo!
+
+}
+

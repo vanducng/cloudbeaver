@@ -1,0 +1,9 @@
+query authLogout(
+  $provider: ID
+  $configuration: ID
+) {
+  authLogout(
+    provider: $provider
+    configuration: $configuration
+  )
+}

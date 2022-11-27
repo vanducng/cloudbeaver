@@ -1,0 +1,18 @@
+mutation closeConnection(
+  $projectId: ID!
+  $connectionId: ID!
+
+  $includeOrigin: Boolean!
+  $customIncludeOriginDetails: Boolean!
+  $includeAuthProperties: Boolean!
+  $includeNetworkHandlersConfig: Boolean!
+  $includeCredentialsSaved: Boolean!
+  $includeAuthNeeded: Boolean!
+  $includeProperties: Boolean!
+  $includeProviderProperties: Boolean!
+  $customIncludeOptions: Boolean!
+) {
+  connection: closeConnection(projectId: $projectId, id: $connectionId) {
+    ...DatabaseConnection
+  }
+}

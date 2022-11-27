@@ -1,0 +1,194 @@
+
+enum AdminSubjectType {
+    user,
+    team
+}
+
+type AdminConnectionGrantInfo {
+    connectionId: ID! @deprecated(reason: "use dataSourceId instead")
+    dataSourceId: ID!
+    subjectId: ID!
+    subjectType: AdminSubjectType!
+}
+
+type AdminObjectPermissions {
+    objectId: ID!
+    permissions: [String!]!
+}
+
+type AdminObjectGrantInfo {
+    subjectId: ID!
+    subjectType: AdminSubjectType!
+    objectPermissions: AdminObjectPermissions!
+}
+
+type AdminConnectionSearchInfo {
+    displayName: String!
+    host: String!
+    port: Int!
+    possibleDrivers: [ID!]!
+    defaultDriver: ID!
+}
+
+type AdminUserInfo {
+    userId: ID!
+
+    metaParameters: Object!
+    configurationParameters: Object!
+    grantedTeams: [ID!]!
+    grantedConnections: [AdminConnectionGrantInfo!]!
+
+    origins: [ObjectOrigin!]!
+
+    linkedAuthProviders: [String!]!
+    enabled: Boolean!
+    authRole: String
+}
+
+type AdminTeamInfo {
+    teamId: ID!
+    teamName: String
+    description: String
+
+    metaParameters: Object!
+
+    grantedUsers: [ID!]!
+    grantedConnections: [AdminConnectionGrantInfo!]!
+
+    teamPermissions: [ID!]!
+}
+
+type AdminPermissionInfo {
+    id: ID!
+    label: String
+    description: String
+
+    provider: String!
+    category: String
+}
+
+type AdminAuthProviderConfiguration {
+    providerId: ID!
+    id: ID!
+    displayName: String!
+    disabled: Boolean!
+
+    iconURL: String
+    description: String
+
+    parameters: Object!
+
+    signInLink: String
+    signOutLink: String
+    redirectLink: String
+    metadataLink: String
+}
+
+type WebFeatureSet {
+    id: String!
+    label: String!
+    description: String
+    icon: String
+
+    enabled: Boolean!
+}
+
+input ServerConfigInput {
+    serverName: String
+    serverURL: String
+
+    adminName: String
+    adminPassword: String
+
+    anonymousAccessEnabled: Boolean
+    authenticationEnabled: Boolean
+    customConnectionsEnabled: Boolean
+    publicCredentialsSaveEnabled: Boolean
+    adminCredentialsSaveEnabled: Boolean
+    resourceManagerEnabled: Boolean
+
+    enabledFeatures: [ID!]
+    enabledAuthProviders: [ID!]
+    disabledDrivers: [ID!]
+
+    sessionExpireTime: Int
+}
+
+extend type Query {
+
+    #### Users and teams
+
+    listUsers(userId: ID): [AdminUserInfo!]!
+    listTeams(teamId: ID): [AdminTeamInfo!]!
+    listPermissions: [AdminPermissionInfo!]!
+    listAuthRoles: [String!]!
+    listTeamMetaParameters: [ObjectPropertyInfo!]!
+
+    createUser(userId: ID!, enabled: Boolean!, authRole: String): AdminUserInfo!
+    deleteUser(userId: ID!): Boolean
+
+    createTeam(teamId: ID!, teamName: String, description: String): AdminTeamInfo!
+    updateTeam(teamId: ID!, teamName: String, description: String): AdminTeamInfo!
+    deleteTeam(teamId: ID!): Boolean
+
+    grantUserTeam(userId: ID!, teamId: ID!): Boolean
+    revokeUserTeam(userId: ID!, teamId: ID!): Boolean
+
+    setSubjectPermissions(subjectId: ID!, permissions: [ID!]!): [AdminPermissionInfo!]!
+
+    setUserCredentials(userId: ID!, providerId: ID!, credentials: Object!): Boolean
+
+    enableUser(userId: ID!, enabled: Boolean!): Boolean
+
+    setUserAuthRole(userId: ID!, authRole: String): Boolean
+
+    #### Connection management
+
+    # All connection configurations
+    searchConnections( hostNames: [String!]! ): [AdminConnectionSearchInfo!]!
+
+    # Permissions
+
+    getConnectionSubjectAccess(projectId: ID!, connectionId: ID): [AdminConnectionGrantInfo!]!
+    setConnectionSubjectAccess(projectId: ID!, connectionId: ID!, subjects: [ID!]!): Boolean
+
+    getSubjectConnectionAccess(subjectId: ID!): [AdminConnectionGrantInfo!]!
+    setSubjectConnectionAccess(subjectId: ID!, connections: [ID!]!): Boolean
+
+    #### Feature sets
+
+    listFeatureSets: [WebFeatureSet!]!
+
+    #### Auth providers and configurations
+
+    listAuthProviderConfigurationParameters(providerId: ID!): [ObjectPropertyInfo!]!
+    listAuthProviderConfigurations(providerId: ID): [AdminAuthProviderConfiguration!]!
+
+    saveAuthProviderConfiguration(
+        providerId: ID!,
+        id: ID!,
+        displayName: String,
+        disabled: Boolean,
+        iconURL: String
+        description: String
+        parameters: Object): AdminAuthProviderConfiguration!
+    deleteAuthProviderConfiguration(id: ID!): Boolean!
+
+    #### User profile
+
+    saveUserMetaParameter(id: ID!, displayName: String!, description: String, required: Boolean!): ObjectPropertyInfo!
+
+    deleteUserMetaParameter(id: ID!): Boolean!
+
+    setUserMetaParameterValues(userId: ID!, parameters: Object!): Boolean!
+
+    setTeamMetaParameterValues(teamId: ID!, parameters: Object!): Boolean!
+
+    #### Global configuration
+
+    configureServer(configuration: ServerConfigInput!): Boolean!
+
+    # Changes default navigator settings
+    setDefaultNavigatorSettings( settings: NavigatorSettingsInput!): Boolean!
+
+}
